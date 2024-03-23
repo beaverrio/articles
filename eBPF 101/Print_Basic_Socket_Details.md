@@ -1,5 +1,7 @@
 # eBPF 101: Your 2024 Guide to Node Network Visibility (Part 1)
 
+![eBPF, Golang and k8s image](./images/openning-image.png)
+
 Welcome to the first instalment of our series on leveraging the capabilities 
 of `eBPF` (Extended Berkeley Packet Filter) for comprehensive network visibility.
 In this multi-part series, we will dive into the powerful world of `eBPF`,
@@ -259,7 +261,7 @@ We received a pointer to the `__sk_buff` struct which will hold information abou
 
 ```c
 __u16 proto;
-__u32 nhoff   	= ETH_HLEN;
+__u32 nhoff = ETH_HLEN;
 
 bpf_skb_load_bytes(skb, 12, &proto, 2);
 proto = __bpf_ntohs(proto);
@@ -447,7 +449,7 @@ cat /sys/kernel/debug/tracing/trace_pipe
 
 Now you will see all `TCP` `ipv4` packets passed on your `k8s` network.
 
-
+![Wow Excited Meme](./images/wow-excited.jpg)
 
 #### Packet Example
 
