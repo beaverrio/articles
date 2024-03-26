@@ -74,7 +74,7 @@ Let's create a new file - `socket.c` and populate it with the following:
 
 The `//go:build ignore` is required to tell the go compiler to ignore this `C` file when building our code (since the compiler does not allow compiling c files without importing the `cgo` library.
 
-#### Definitions and Structs
+### Definitions and Structs
 
 ```c
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
@@ -106,7 +106,7 @@ The `SEC()` macro is responsible to put the defined object in the given ELF sect
 
 The `__tcphdr` struct is defined because we did not want to install additional `apt` packages for only one header file.
 
-#### Helping Methods
+### Helping Methods
 
 ```c
 // Check if the socket packet received is an IP fragment.
@@ -134,7 +134,7 @@ void print_be32_as_ip(__be32 ip, __u16 proto, __u32 ip_proto) {
 
 Those 2 methods will be used in the following section.
 
-#### SEC macro
+### The Main SEC macro
 
 ```c
 SEC("socket")
@@ -148,7 +148,7 @@ The `SEC()` macro above the method, tells the kernel to run our method before
 The kernel itself does something with the received packet.
 We received a pointer to the `__sk_buff` struct which will hold information about the socket and the data it transfers.
 
-#### Packets Protocol
+### Packets Protocol
 
 ```c
 __u16 proto;
@@ -168,7 +168,7 @@ if (ip_is_fragment(skb, nhoff)) {
 
 Here we load the packet's layer 3 protocol into the `proto` variable, and check if it's an Internet Protocol packet.
 
-#### Checking the packets Header size
+### Checking the packets Header size
 
 ```c
 __u8 hdr_len;
@@ -188,7 +188,7 @@ if (hdr_len < sizeof(struct iphdr)) {
 Here we check if the packets header length is not corrupted while it traveled in the network,
 if it is, we won't be able to parse it.
 
-#### TCP or somethine else?
+### TCP or somethine else?
 
 ```c
 __u32 ip_proto	= 0;
@@ -207,7 +207,7 @@ as this is the type of packet we are after.
 Each packet type (`TCP`, `UDP`, `amqp`, `gRPC`, ...) have to be parsed in a different way later on.
 This subject will be discussed in a future blog article.
 
-#### Source and Destination IPs!
+### Source and Destination IPs!
 
 Now let's load the IPs and ports and start brewing our tea 🍵!
 
@@ -220,7 +220,7 @@ bpf_skb_load_bytes(skb, nhoff + offsetof(struct iphdr, daddr), &dst_address, 4);
 ...
 ```
 
-#### Source and Destination Ports!
+### Source and Destination Ports!
 
 ```c
 __be16 ports[2];
@@ -239,7 +239,7 @@ dst_port = ((dst_port>>8) | (dst_port<<8));
 
 Both source and destination ports are stored together in the beginning of the tcp header, each port is represented as an unsigned 16-bit number - hence we extract 4 bytes (32 bits) from the packet's data. We start reading from the offset pointing to the beginning of the tcp header that comes after the ip header (the sum of the Ethernet header length - `nhoff`, and the IP header length - `hdr_len`.
 
-#### Last job - Printing the IPs and the Ports
+### Last job - Printing the IPs and the Ports
 
 ```c
 bpf_printk("Packet was sent from:");
@@ -277,9 +277,7 @@ go get github.com/cilium/ebpf/cmd/bpf2go
 go mod tidy
 ```
 
-### Writing some exciting Golang code
-
-#### Configuring Network Interface
+### Configuring Network Interface
 
 Let's create a `main.go` and populate it with:
 
@@ -322,7 +320,7 @@ a network interface as we need to tell the kernel which network interface we're 
 The `net.InterfaceByName(ifaceName)` checks if the user requested an existing network interface
 and did not provide us with something imaginary (just in case).
 
-#### Loading the Compiled C Code
+### Loading the Compiled C Code
 
 In the `C` section of this tutorial we will generate some objects.
 Now we need to load them:
@@ -338,7 +336,7 @@ defer objs.Close()
 ...
 ```
 
-#### Injecting the eBPF code to Manipulate the Kernel’s Socket behaviour
+### Injecting the eBPF code to Manipulate the Kernel’s Socket behaviour
 
 The following section will load the eBPF program (which we will write soon)
 into the kernel so it can be executed on each socket event.
@@ -391,7 +389,7 @@ This generated 4 new files:
 
 Those files are created by the package `bpf2go` that we downloaded before.
 
-### Build the Executable
+### Building the Executable
 
 ```shell
 go build
