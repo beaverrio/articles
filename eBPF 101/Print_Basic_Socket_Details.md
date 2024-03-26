@@ -1,6 +1,6 @@
 # eBPF 101: Your 2024 Guide to Node Network Visibility (Part 1)
 
-![eBPF, Golang and k8s image](./images/openning-image.png)
+![eBPF, Golang and k8s image](./images/opening-image.png)
 
 Welcome to the first instalment of our series on leveraging the capabilities 
 of `eBPF` (Extended Berkeley Packet Filter) for comprehensive network visibility.
@@ -295,7 +295,7 @@ if (hdr_len < sizeof(struct iphdr)) {
 ...
 ```
 
-Here we check if the packets header lenght is not corupted while it traveled in the network,
+Here we check if the packets header length is not corrupted while it traveled in the network,
 if it is, we won't be able to parse it.
 
 #### TCP or somethine else?
