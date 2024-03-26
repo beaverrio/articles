@@ -8,7 +8,7 @@ In this multi-part series, we will dive into the powerful world of `eBPF`,
 exploring how we can gain insights from the network activity within our `k8s` nodes.
 Throughout this journey, we'll be utilizing the dynamic duo of `Golang` and `C` to harness the full potential of `eBPF`.
 
-Today we will be using the `SEC("socket")` marco with the `__sk_buff` struct on
+Today we will be using the `SEC("socket")` macro with the `__sk_buff` struct on
 the `eBPF` side to monitor and manage the network,
 while using [bpf2go](https://pkg.go.dev/github.com/cilium/ebpf/cmd/bpf2go)
 on the client side to inject the `eBPF` code into the kernel.
@@ -115,10 +115,10 @@ func main() {
 The `//go:generate …` comment will be used later to tell `Golang` what files to compile using `bpf2go`.
 
 The first if statement in our main() function checks if the user executed the eBPF code with
-a network interface as we need to tell the kernel what network to monitor for us.
+a network interface as we need to tell the kernel which network interface we're going to monitor.
 
 The `net.InterfaceByName(ifaceName)` checks if the user requested an existing network interface
-and did not provide us with something imaginary (Just in case).
+and did not provide us with something imaginary (just in case).
 
 #### Loading the Compiled C Code
 
@@ -182,7 +182,7 @@ Let's create a new file - `socket.c` and populate it with the following:
 ...
 ```
 
-The `//go:build ignore` is for telling `Golang` not to build this `C` file.
+The `//go:build ignore` is required to tell the go compiler to ignore this `C` file when building our code (since the compiler does not allow compiling c files without importing the `cgo` library.
 
 #### Definitions and Structs
 
@@ -276,7 +276,7 @@ if (ip_is_fragment(skb, nhoff)) {
 ...
 ```
 
-Here we load the packets protocol into the `proto`, and check if it's an Internet Protocol packet.
+Here we load the packet's layer 3 protocol into the `proto` variable, and check if it's an Internet Protocol packet.
 
 #### Checking the packets Header size
 
@@ -315,7 +315,7 @@ The `ip_proto` variable will be used to filter `TCP` packets from the rest,
 as this is the type of packet we are after.
 
 Each packet type (`TCP`, `UDP`, `amqp`, `gRPC`, ...) have to be parsed in a different way later on.
-This subject will be touched in a future blog article.
+This subject will be discussed in a future blog article.
 
 #### Source and Destination IPs!
 
@@ -347,7 +347,7 @@ dst_port = ((dst_port>>8) | (dst_port<<8));
 ...
 ```
 
-The ports are stored together in the `__sk_buff` struct, therefor we fetch them together.
+Both source and destination ports are stored together in the beginning of the tcp header, each port is represented as an unsigned 16-bit number - hence we extract 4 bytes (32 bits) from the packet's data. We start reading from the offset pointing to the beginning of the tcp header that comes after the ip header (the sum of the Ethernet header length - `nhoff`, and the IP header length - `hdr_len`.
 
 #### Last job - Printing the IPs and the Ports
 
@@ -366,7 +366,7 @@ Using `bpf_printk()` and `print_be32_as_ip()` we will print the IPs and the port
 
 #### Generating eBPF Code
 
-To have `eBPF` code to load into the kernel, we need to generate it:
+To load the `eBPF` program into the kernel, we need to compile it and generate some go files which create structs we use in the user-space code. To do that we will use the `bpf2go` library which is specified in the `go:generate` marker comment in the beginning of the `main.go` file:
 
 ```shell
 go generate
@@ -431,7 +431,7 @@ Congrats! Your `eBPF` program is running!
 
 Remember we said that no client side code will be written? This is why the logs are empty.
 If you paid attention, we printed the IPs and the ports on the kernel side using `C`.
-Therefor, we need to access the kernels tracing file to see our IPs.
+Therefore, we need to access the kernel's tracing file to see our printings.
 
 On a different terminal in the same pod run this:
 
@@ -439,13 +439,13 @@ On a different terminal in the same pod run this:
 mount -t debugfs none /sys/kernel/debug
 ```
 
-This command will allow us to access and `cat` the kernels tracing file using:
+This command will allow us to access and `cat` the kernel's tracing file using:
 
 ```shell
 cat /sys/kernel/debug/tracing/trace_pipe
 ```
 
-Now you will see all `TCP` `ipv4` packets passed on your `k8s` network.
+Now you will see all `TCP` packets using `ipv4` sent over your `k8s` network.
 
 ![Wow Excited Meme](./images/wow-excited.jpg)
 
@@ -480,7 +480,7 @@ rmq-publisher-6129    [006] b.s11  8873.711584: bpf_trace_printk:    * Parsed IP
 rmq-publisher-6129    [006] b.s11  8873.711584: bpf_trace_printk:    To port: 5672
 ```
 
-Which is what we need!
+Which is exactly what's happening over our network!
 
 #### curl Example
 
@@ -490,7 +490,7 @@ Let's try running the following `curl` command to `GitHub` IP:
 kubectl exec --tty rabbitmq-0 -n rabbitmq -- curl 140.82.121.3
 ```
 
-Here is the kernels log:
+Here is the kernel's log:
 
 ```log
 curl-57429   [009] ..s11 10092.135680: bpf_trace_printk: The packet was sent using protocol 6
@@ -512,21 +512,21 @@ curl-57429   [009] ..s11 10092.135709: bpf_trace_printk:    To port: 80
 <idle>-0       [000] bNs.1 10092.135939: bpf_trace_printk:    To port: 35660
 ```
 
-In this example we printed the packet as it left our `rabbitmq-0` pod,
-and then when a packet was returned from `GitHub` to our pod!
+In this example we printed the request's packet details as it left our `rabbitmq-0` pod,
+and then the response's  packet details that was returned from `GitHub` to our pod!
 
-## Summery
+## Summary
 
 In this tutorial, we:
 
 1. Used `bpf2go` Golang library to load our `eBPF`
 Code into the k8s kernel
-2. Learnt about `SEC("socket")` and what it does.
+2. Learned about `SEC("socket")` and what it does.
 3. Parsed the arriving socket packets on the kernel side.
-4. Run the eBPF code!
+4. Ran the eBPF code!
 
-Press you can find the full source code: https://github.com/beaverrio/ebpf-101-network-visibility
+You can find the full source code in the following link: https://github.com/beaverrio/ebpf-101-network-visibility
 
 In the next post we will parse the payload itself to see the actual traffic in our network.
 
-Let us know what else would you like to learn about eBPF and networking!
+Let us know what else you would like to learn about eBPF and networking!
