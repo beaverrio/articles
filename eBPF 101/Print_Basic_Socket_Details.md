@@ -163,9 +163,9 @@ for {
 
 Now we are ready to write our `eBPF` code!
 
-### eBPF to Monitor the Network
+## Kernel Side Code
 
-#### Includes
+### Includes
 
 Let's create a new file - `socket.c` and populate it with the following:
 
@@ -362,9 +362,9 @@ bpf_printk("\tTo port: %d", dst_port);
 
 Using `bpf_printk()` and `print_be32_as_ip()` we will print the IPs and the ports on the kernel side.
 
-### Generating, Building and running the eBPF Code
+## Generating, Building and running the eBPF Code
 
-#### Generating eBPF Code
+### Generating eBPF Code
 
 To load the `eBPF` program into the kernel, we need to compile it and generate some go files which create structs we use in the user-space code. To do that we will use the `bpf2go` library which is specified in the `go:generate` marker comment in the beginning of the `main.go` file:
 
@@ -390,7 +390,7 @@ This generated 4 new files:
 
 Those files are created by the package `bpf2go` that we downloaded before.
 
-#### Build the Executable
+### Build the Executable
 
 ```shell
 go build
@@ -399,7 +399,7 @@ go build
 This command will build the executable file that we will run on the `k8s` cluster
 to load the `eBPF` program: `ebpf-tutorial`.
 
-#### Running the Executable
+### Running the Executable
 
 To run it just use:
 
@@ -427,7 +427,7 @@ To run it just use:
 
 Congrats! Your `eBPF` program is running!
 
-#### Check out the results
+### Checking out the results
 
 Remember we said that no client side code will be written? This is why the logs are empty.
 If you paid attention, we printed the IPs and the ports on the kernel side using `C`.
