@@ -52,116 +52,6 @@ ENTRYPOINT [ "tail", "-f", "/dev/null" ]
 
 The created image will contain everything we need to generate, build and run our `eBPF` program!
 
-## Client Side Code
-
-`Golang` will be used for 2 purposes:
-
-- Writing the client side program - What to do with the packets data received from the kernel (In the next tutorials).
-- Injecting the `eBPF` code into the kernel - To load our `C` program into the kernel in order to extend its behaviour.
-
-### Golang Package
-
-We need to create a new project:
-
-```shell
-go mod init ebpf-tutorial
-```
-
-Now we will download one package `bpf2go` which can be added like this:
-
-```shell
-go get github.com/cilium/ebpf/cmd/bpf2go
-
-go mod tidy
-```
-
-### Writing some exciting Golang code
-
-#### Configuring Network Interface
-
-Let's create a `main.go` and populate it with:
-
-```go
-package main
-
-import (
-    "os"
-    "net"
-    "log"
-    "unsafe"
-    "syscall"
-    "encoding/binary"
-)
-
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go bpf socket.c -- -I./headers -I/usr/include/aarch64-linux-gnu
-
-func main() {
-	// Making sure the user added a network interface as an argument.
-	if len(os.Args) < 2 {
-		log.Fatalf("Please specify a network interface")
-	}
-
-	// Look up the network interface by name.
-	ifaceName := os.Args[1]
-	iface, err := net.InterfaceByName(ifaceName)
-	if err != nil {
-		log.Fatalf("lookup network iface %q: %s", ifaceName, err)
-	}
-    	
-	...
-}
-```
-
-The `//go:generate …` comment will be used later to tell `Golang` what files to compile using `bpf2go`.
-
-The first if statement in our main() function checks if the user executed the eBPF code with
-a network interface as we need to tell the kernel which network interface we're going to monitor.
-
-The `net.InterfaceByName(ifaceName)` checks if the user requested an existing network interface
-and did not provide us with something imaginary (just in case).
-
-#### Loading the Compiled C Code
-
-In the `C` section of this tutorial we will generate some objects.
-Now we need to load them:
-
-```c
-// Load pre-compiled programs into the kernel.
-objs := bpfObjects{}
-if err := loadBpfObjects(&objs, nil); err != nil {
-	log.Fatalf("loading objects: %s", err)
-}
-defer objs.Close()
-
-...
-```
-
-#### Injecting the eBPF code to Manipulate the Kernel’s Socket behaviour
-
-The following section will load the eBPF program (which we will write soon)
-into the kernel so it can be executed on each socket event.
-
-```golang
-// Loading the C code into the kernel.
-socketFd, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW, int(htons(syscall.ETH_P_ALL)))
-if err != nil {
-	log.Fatalf("failed to create socket: %s", err)
-}
-defer syscall.Close(socketFd)
-
-fd := objs.SocketHandler.FD()
-if err := syscall.SetsockoptInt(socketFd, syscall.SOL_SOCKET, SO_ATTACH_BPF, fd); err != nil {
-	log.Panic(err)
-}
-defer syscall.SetsockoptInt(socketFd, syscall.SOL_SOCKET, SO_DETACH_BPF, fd)
-
-log.Printf("Attached socket program to iface %q (index %d)", iface.Name, iface.Index)
-log.Printf("Press Ctrl-C to exit and remove the program")
-for {
-}
-```
-
-Now we are ready to write our `eBPF` code!
 
 ## Kernel Side Code
 
@@ -361,6 +251,117 @@ bpf_printk("\tTo port: %d", dst_port);
 ```
 
 Using `bpf_printk()` and `print_be32_as_ip()` we will print the IPs and the ports on the kernel side.
+
+Now we are ready to write our client side code!
+
+## Client Side Code
+
+`Golang` will be used for 2 purposes:
+
+- Writing the client side program - What to do with the packets data received from the kernel (In the next tutorials).
+- Injecting the `eBPF` code into the kernel - To load our `C` program into the kernel in order to extend its behaviour.
+
+### Golang Package
+
+We need to create a new project:
+
+```shell
+go mod init ebpf-tutorial
+```
+
+Now we will download one package `bpf2go` which can be added like this:
+
+```shell
+go get github.com/cilium/ebpf/cmd/bpf2go
+
+go mod tidy
+```
+
+### Writing some exciting Golang code
+
+#### Configuring Network Interface
+
+Let's create a `main.go` and populate it with:
+
+```go
+package main
+
+import (
+    "os"
+    "net"
+    "log"
+    "unsafe"
+    "syscall"
+    "encoding/binary"
+)
+
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go bpf socket.c -- -I./headers -I/usr/include/aarch64-linux-gnu
+
+func main() {
+	// Making sure the user added a network interface as an argument.
+	if len(os.Args) < 2 {
+		log.Fatalf("Please specify a network interface")
+	}
+
+	// Look up the network interface by name.
+	ifaceName := os.Args[1]
+	iface, err := net.InterfaceByName(ifaceName)
+	if err != nil {
+		log.Fatalf("lookup network iface %q: %s", ifaceName, err)
+	}
+    	
+	...
+}
+```
+
+The `//go:generate …` comment will be used later to tell `Golang` what files to compile using `bpf2go`.
+
+The first if statement in our main() function checks if the user executed the eBPF code with
+a network interface as we need to tell the kernel which network interface we're going to monitor.
+
+The `net.InterfaceByName(ifaceName)` checks if the user requested an existing network interface
+and did not provide us with something imaginary (just in case).
+
+#### Loading the Compiled C Code
+
+In the `C` section of this tutorial we will generate some objects.
+Now we need to load them:
+
+```c
+// Load pre-compiled programs into the kernel.
+objs := bpfObjects{}
+if err := loadBpfObjects(&objs, nil); err != nil {
+	log.Fatalf("loading objects: %s", err)
+}
+defer objs.Close()
+
+...
+```
+
+#### Injecting the eBPF code to Manipulate the Kernel’s Socket behaviour
+
+The following section will load the eBPF program (which we will write soon)
+into the kernel so it can be executed on each socket event.
+
+```golang
+// Loading the C code into the kernel.
+socketFd, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW, int(htons(syscall.ETH_P_ALL)))
+if err != nil {
+	log.Fatalf("failed to create socket: %s", err)
+}
+defer syscall.Close(socketFd)
+
+fd := objs.SocketHandler.FD()
+if err := syscall.SetsockoptInt(socketFd, syscall.SOL_SOCKET, SO_ATTACH_BPF, fd); err != nil {
+	log.Panic(err)
+}
+defer syscall.SetsockoptInt(socketFd, syscall.SOL_SOCKET, SO_DETACH_BPF, fd)
+
+log.Printf("Attached socket program to iface %q (index %d)", iface.Name, iface.Index)
+log.Printf("Press Ctrl-C to exit and remove the program")
+for {
+}
+```
 
 ## Generating, Building and running the eBPF Code
 
