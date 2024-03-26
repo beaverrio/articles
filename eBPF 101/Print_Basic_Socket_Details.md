@@ -5,8 +5,8 @@
 Welcome to the first instalment of our series on leveraging the capabilities 
 of `eBPF` (Extended Berkeley Packet Filter) for comprehensive network visibility.
 In this multi-part series, we will dive into the powerful world of `eBPF`,
-exploring how we can gain insights into network activity within our `k8s` nodes.
-Throughout this journey, we'll be utilising the dynamic duo of `Golang` and `C` to harness the full potential of `eBPF`.
+exploring how we can gain insights from the network activity within our `k8s` nodes.
+Throughout this journey, we'll be utilizing the dynamic duo of `Golang` and `C` to harness the full potential of `eBPF`.
 
 Today we will be using the `SEC("socket")` marco with the `__sk_buff` struct on
 the `eBPF` side to monitor and manage the network,
@@ -120,7 +120,7 @@ a network interface as we need to tell the kernel what network to monitor for us
 The `net.InterfaceByName(ifaceName)` checks if the user requested an existing network interface
 and did not provide us with something imaginary (Just in case).
 
-#### Loading the General Generated C Code
+#### Loading the Compiled C Code
 
 In the `C` section of this tutorial we will generate some objects.
 Now we need to load them:
@@ -211,7 +211,8 @@ struct __tcphdr {
 
 For `eBPF` code to be loaded into the kernel, it must have a `SEC("license")`.
 Each `eBPF` program that runs on the kernel must have a license as programs are required to be GPL-compatible.
-Just deal with it.
+
+The `SEC()` macro is responsible to put the defined object in the given ELF section, e.g. the `maps` section, `license` section or the `socket` section.
 
 The `__tcphdr` struct is defined because we did not want to install additional `apt` packages for only one header file.
 
@@ -276,7 +277,6 @@ if (ip_is_fragment(skb, nhoff)) {
 ```
 
 Here we load the packets protocol into the `proto`, and check if it's an Internet Protocol packet.
-Then we check if its an IP fragment.
 
 #### Checking the packets Header size
 
@@ -330,8 +330,6 @@ bpf_skb_load_bytes(skb, nhoff + offsetof(struct iphdr, daddr), &dst_address, 4);
 ...
 ```
 
-They will be printed using the `print_be32_as_ip()` method from before later on.
-
 #### Source and Destination Ports!
 
 ```c
@@ -362,7 +360,7 @@ print_be32_as_ip(dst_address, proto, ip_proto);
 bpf_printk("\tTo port: %d", dst_port);
 ```
 
-Using `bpf_printk` we will print the IPs and the ports on the kernel side.
+Using `bpf_printk()` and `print_be32_as_ip()` we will print the IPs and the ports on the kernel side.
 
 ### Generating, Building and running the eBPF Code
 
