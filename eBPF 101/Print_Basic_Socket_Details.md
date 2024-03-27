@@ -144,8 +144,7 @@ int socket_handler(struct __sk_buff *skb) {
 }
 ```
 
-The `SEC()` macro above the method, tells the kernel to run our method before
-The kernel itself does something with the received packet.
+The `SEC()` macro above the method, tells the kernel to run our method before the kernel itself handles the received packet.
 We received a pointer to the `__sk_buff` struct which will hold information about the socket and the data it transfers.
 
 ### Packets Protocol
