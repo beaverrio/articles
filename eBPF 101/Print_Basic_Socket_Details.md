@@ -185,8 +185,16 @@ if (hdr_len < sizeof(struct iphdr)) {
 ...
 ```
 
-Here we check if the packets header length is not corrupted while it traveled in the network,
-if it is, we won't be able to parse it.
+Here we extract the IP header length of the packet by parsing the packet's data.
+The IP header length is specified in the second field of the IP header
+(which size is 4 bits - hence the `&` masking),
+which comes after the Ethernet header
+(which size is 14 bytes - hence the offset passed to the function loading the bytes).
+
+Then we check if the packet's IP header length we extracted is not smaller than
+the size of the entire `iphdr` struct,
+indicating the extraction was wrong or the data itself has been corrupted while
+it traveled in the network - in both cases won't be able to parse it.
 
 ### TCP or somethine else?
 
@@ -360,6 +368,9 @@ log.Printf("Press Ctrl-C to exit and remove the program")
 for {
 }
 ```
+
+This code creates a raw socket to work directly with network packets and then
+attaches our `eBPF` program to the socket.
 
 ## Generating, Building and running the eBPF Code
 
