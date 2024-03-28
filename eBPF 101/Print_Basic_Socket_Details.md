@@ -144,8 +144,7 @@ int socket_handler(struct __sk_buff *skb) {
 }
 ```
 
-The `SEC()` macro above the method, tells the kernel to run our method before
-The kernel itself does something with the received packet.
+The `SEC()` macro above the method, tells the kernel to run our method before the kernel itself handles the received packet.
 We received a pointer to the `__sk_buff` struct which will hold information about the socket and the data it transfers.
 
 ### Packets Protocol
@@ -245,7 +244,7 @@ dst_port = ((dst_port>>8) | (dst_port<<8));
 ...
 ```
 
-Both source and destination ports are stored together in the beginning of the tcp header, each port is represented as an unsigned 16-bit number - hence we extract 4 bytes (32 bits) from the packet's data. We start reading from the offset pointing to the beginning of the tcp header that comes after the ip header (the sum of the Ethernet header length - `nhoff`, and the IP header length - `hdr_len`.
+Both source and destination ports are stored together in the beginning of the tcp header, each port is represented as an unsigned 16-bit number - hence we extract 4 bytes (32 bits) from the packet's data. We start reading from the offset pointing to the beginning of the tcp header that comes after the ip header (the sum of the Ethernet header length - `nhoff`, and the IP header length - `hdr_len`).
 
 ### Last job - Printing the IPs and the Ports
 
