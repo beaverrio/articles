@@ -15,6 +15,18 @@ article about eBPF without writing code!?
 
 ### Map
 
+```c
+struct {
+	__uint(type, BPF_MAP_TYPE_RINGBUF);
+	__uint(max_entries, 256 * 1024);
+} rb SEC(".maps");
+```
+
+This is a ringbuf map (whats ringbuf?) which
+will be used to transfer our pakcets payload
+from the kernel side program to the client
+side program to be parsed and printed.
+
 ### Gathering packets payload
 
 ### Populating the Map
