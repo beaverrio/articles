@@ -193,9 +193,9 @@ which comes after the Ethernet header
 Then we check if the packet's IP header length we extracted is not smaller than
 the size of the entire `iphdr` struct,
 indicating the extraction was wrong or the data itself has been corrupted while
-it traveled in the network - in both cases won't be able to parse it.
+it traveled in the network - in both cases we won't be able to parse it.
 
-### TCP or somethine else?
+### TCP or something else?
 
 ```c
 __u32 ip_proto	= 0;
@@ -246,7 +246,7 @@ dst_port = ((dst_port>>8) | (dst_port<<8));
 
 Both source and destination ports are stored together in the beginning of the tcp header, each port is represented as an unsigned 16-bit number - hence we extract 4 bytes (32 bits) from the packet's data. We start reading from the offset pointing to the beginning of the tcp header that comes after the ip header (the sum of the Ethernet header length - `nhoff`, and the IP header length - `hdr_len`).
 
-### Last job - Printing the IPs and the Ports
+### Last kernel side step - Printing the IPs and the Ports
 
 ```c
 bpf_printk("Packet was sent from:");
@@ -268,7 +268,7 @@ Now we are ready to write our client side code!
 - Writing the client side program - What to do with the packets data received from the kernel (In the next tutorials).
 - Injecting the `eBPF` code into the kernel - To load our `C` program into the kernel in order to extend its behaviour.
 
-### Golang Package
+### Golang Project & Dependencies
 
 We need to create a new project:
 
