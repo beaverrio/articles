@@ -368,8 +368,8 @@ for {
 }
 ```
 
-This code creates a raw socket to work directly with network packets and then
-attaches our `eBPF` program to the socket.
+This code creates a socket and setting its options based on the file descriptor
+of the handler function we create in our `eBPF` program.
 
 ## Generating, Building and running the eBPF Code
 
